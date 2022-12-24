@@ -203,7 +203,8 @@ function getListaVendas(codCliente) {
         let db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
 
         const sql = `SELECT * FROM Venda V 
-                    INNER JOIN VendaProduto VP ON VP.CodVenda = V.CodVenda`
+                    INNER JOIN VendaProduto VP ON VP.CodVenda = V.CodVenda
+                    INNER JOIN Cliente C ON C.CodCliente = V.CodCliente`
             + (!codCliente ? "" : ` WHERE V.CodCliente = ${codCliente}`);
 
         db.all(sql, [], (err, rows) => {
