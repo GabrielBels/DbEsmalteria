@@ -234,7 +234,7 @@ function getListaVendas(filtros) {
 function getCliente(nomeCliente) {
     return new Promise((resolve, reject) => {
 
-        const db = new sqlite3.Database(`./ ${nomeEmpresa.toLowerCase()}.db`);
+        const db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
 
         const sql = `SELECT CodCliente, Nome FROM Cliente NOLOCK WHERE Nome LIKE '${nomeCliente}%'`;
 
@@ -264,7 +264,7 @@ async function getCreateCliente(nomeCliente, isRetry) {
 function insertTbVenda(codCliente, dataVenda, formaPagto, qtdParcelas, valorTotal) {
     return new Promise((resolve, reject) => {
 
-        let db = new sqlite3.Database(`./ ${nomeEmpresa.toLowerCase()}.db`);
+        let db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
 
         db.run(`INSERT INTO Venda(CodCliente, DataVenda, FormaPagto, QtdParcelas, ValorTotal) VALUES(?,?,?,?,?)`, [codCliente, dataVenda, formaPagto, qtdParcelas, valorTotal],
             function (err) {
@@ -282,7 +282,7 @@ function insertTbVenda(codCliente, dataVenda, formaPagto, qtdParcelas, valorTota
 function insertTbVendaProduto(codVenda, listaProdutos) {
     return new Promise((resolve, reject) => {
 
-        let db = new sqlite3.Database(`./ ${nomeEmpresa.toLowerCase()}.db`);
+        let db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
 
         const sqlProdutos = listaProdutos.map((el) => `(${codVenda}, ${el.qtd}, '${el.nome}', ${el.valorUnitario}, ${el.valorTotal})`).join(",");
 
@@ -301,7 +301,7 @@ function insertTbVendaProduto(codVenda, listaProdutos) {
 
 function insertCliente(nomeCliente) {
     return new Promise((resolve, reject) => {
-        let db = new sqlite3.Database(`./ ${nomeEmpresa.toLowerCase()}.db`);
+        let db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
 
         db.run(`INSERT INTO CLIENTE(Nome) VALUES('${nomeCliente}')`);
 
