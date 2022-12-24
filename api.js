@@ -21,7 +21,6 @@ app.get('/GetCadastraCliente', async (req, res) => {
 
         getCreateCliente((request.nomeCliente ?? "").trim())
             .then((result) => {
-                console.log(result);
                 return res.status(200).json({ sucess: true, data: result })
             })
             .catch((error) => {
@@ -41,7 +40,6 @@ app.get('/GetCliente', async (req, res) => {
 
         getCliente(request.nomeCliente)
             .then((result) => {
-                console.log(result);
                 return res.status(200).json({ sucess: true, data: result })
             })
             .catch((error) => {
@@ -61,13 +59,6 @@ app.post('/Venda', async (req, res) => {
         const request = req.body;
 
         const { codCliente, dataVenda, formaPagamento, numParcelas, valorTotal, listaProdutos } = request;
-
-        // console.log(codCliente);
-        // console.log(dataVenda);
-        // console.log(formaPagamento);
-        // console.log(valorTotal);
-        // console.log(numParcelas);
-        // console.log(listaProdutos);
 
         if (!codCliente)
             return res.status(400).json({ sucess: false, message: "Código do cliente não informado!" });
@@ -91,8 +82,6 @@ app.post('/Venda', async (req, res) => {
 
         insertTbVenda(codCliente, dataVenda, formaPagamento, numParcelas, valorTotal)
             .then((result) => {
-                console.log(result);
-
                 insertTbVendaProduto(result, listaProdutos).then(() => {
                     return res.status(200).json({ sucess: true, codVenda: result })
                 }).catch((exx) => {
@@ -103,17 +92,15 @@ app.post('/Venda', async (req, res) => {
                 throw error;
             });
     } catch (ex) {
-        console.log('error: ' + ex)
-
         return res.status(500).json({ sucess: false, message: ex });
     }
 });
 
 app.get('/Venda', async (req, res) => {
     try {
-        const { codCliente, codVenda } = req.query;
+        // codCliente, codVenda, nomeCliente, dataInicio, dataFim
 
-        getListaVendas(codCliente, codVenda)
+        getListaVendas(req.query)
             .then((result) => {
                 const listaProdutos = result.reduce((acc, curr, i, arr) => {
 
@@ -144,8 +131,6 @@ app.get('/Venda', async (req, res) => {
                 throw error;
             });
     } catch (ex) {
-        console.log('error: ' + ex)
-
         return res.status(500).json({ sucess: false, message: ex });
     }
 });
@@ -154,7 +139,7 @@ app.get('/Venda', async (req, res) => {
 
 
 app.listen(8001, () => {
-    console.log('\nApp escutando na porta: localhost' + ':' + 8001)
+    // console.log('\nApp escutando na porta: localhost' + ':' + 8001)
 })
 //#endregion
 
@@ -197,7 +182,7 @@ async function createDatabaseAndTables() {
 //#endregion 
 
 //#region Selects
-function getListaVendas(codCliente, codVenda) {
+function getListaVendas(filtros) {
     return new Promise((resolve, reject) => {
 
         let db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
@@ -207,9 +192,32 @@ function getListaVendas(codCliente, codVenda) {
                     INNER JOIN VendaProduto VP ON VP.CodVenda = V.CodVenda
                     INNER JOIN Cliente C ON C.CodCliente = V.CodCliente`;
 
-        if (codCliente || codVenda) {
-            sql += ` WHERE ` + (!codCliente ? "" : ` V.CodCliente = ${codCliente}`)
-                + (!codVenda ? "" : ` V.CodVenda = ${codVenda}`);
+        // codCliente, codVenda, nomeCliente, dataInicio, dataFim
+        if (filtros && Object.keys(filtros).length > 0) {
+            sql += ` WHERE `;
+
+            let clausules = "";
+
+            if (filtros.codCliente)
+                clausules += `V.CodCliente = ${filtros.codCliente} `;
+
+            if (filtros.codVenda)
+                clausules += (!!clausules ? `AND ` : ``) +
+                    `V.CodVenda = ${filtros.codVenda} `;
+
+            if (filtros.nomeCliente)
+                clausules += (!!clausules ? `AND ` : ``) +
+                    `C.Nome LIKE '${filtros.nomeCliente}%' `;
+
+            if (filtros.dataInicio)
+                clausules += (!!clausules ? `AND ` : ``) +
+                    `V.DataVenda >= ${filtros.dataInicio} `;
+
+            if (filtros.dataFim)
+                clausules += (!!clausules ? `AND ` : ``) +
+                    `V.DataVenda <= ${filtros.dataFim} `;
+
+            sql += clausules;
         }
 
         db.all(sql, [], (err, rows) => {
@@ -226,7 +234,7 @@ function getListaVendas(codCliente, codVenda) {
 function getCliente(nomeCliente) {
     return new Promise((resolve, reject) => {
 
-        const db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
+        const db = new sqlite3.Database(`./ ${nomeEmpresa.toLowerCase()}.db`);
 
         const sql = `SELECT CodCliente, Nome FROM Cliente NOLOCK WHERE Nome LIKE '${nomeCliente}%'`;
 
@@ -256,9 +264,9 @@ async function getCreateCliente(nomeCliente, isRetry) {
 function insertTbVenda(codCliente, dataVenda, formaPagto, qtdParcelas, valorTotal) {
     return new Promise((resolve, reject) => {
 
-        let db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
+        let db = new sqlite3.Database(`./ ${nomeEmpresa.toLowerCase()}.db`);
 
-        db.run(`INSERT INTO Venda (CodCliente, DataVenda, FormaPagto, QtdParcelas, ValorTotal) VALUES (?,?,?,?,?)`, [codCliente, dataVenda, formaPagto, qtdParcelas, valorTotal],
+        db.run(`INSERT INTO Venda(CodCliente, DataVenda, FormaPagto, QtdParcelas, ValorTotal) VALUES(?,?,?,?,?)`, [codCliente, dataVenda, formaPagto, qtdParcelas, valorTotal],
             function (err) {
                 if (err) reject(err);
 
@@ -274,11 +282,11 @@ function insertTbVenda(codCliente, dataVenda, formaPagto, qtdParcelas, valorTota
 function insertTbVendaProduto(codVenda, listaProdutos) {
     return new Promise((resolve, reject) => {
 
-        let db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
+        let db = new sqlite3.Database(`./ ${nomeEmpresa.toLowerCase()}.db`);
 
         const sqlProdutos = listaProdutos.map((el) => `(${codVenda}, ${el.qtd}, '${el.nome}', ${el.valorUnitario}, ${el.valorTotal})`).join(",");
 
-        db.run(`INSERT INTO VendaProduto (CodVenda, Quantidade, NomeProduto, ValorUnidade, ValorTotal) VALUES ${sqlProdutos}`,
+        db.run(`INSERT INTO VendaProduto(CodVenda, Quantidade, NomeProduto, ValorUnidade, ValorTotal) VALUES ${sqlProdutos} `,
             function (err) {
                 if (err) reject(err);
 
@@ -293,9 +301,9 @@ function insertTbVendaProduto(codVenda, listaProdutos) {
 
 function insertCliente(nomeCliente) {
     return new Promise((resolve, reject) => {
-        let db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
+        let db = new sqlite3.Database(`./ ${nomeEmpresa.toLowerCase()}.db`);
 
-        db.run(`INSERT INTO CLIENTE (Nome) VALUES ('${nomeCliente}')`);
+        db.run(`INSERT INTO CLIENTE(Nome) VALUES('${nomeCliente}')`);
 
         const sql = `SELECT CodCliente, Nome FROM Cliente NOLOCK WHERE Nome = '${nomeCliente}'`;
 
