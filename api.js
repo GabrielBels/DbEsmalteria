@@ -197,15 +197,20 @@ async function createDatabaseAndTables() {
 //#endregion 
 
 //#region Selects
-function getListaVendas(codCliente) {
+function getListaVendas(codCliente, codVenda) {
     return new Promise((resolve, reject) => {
 
         let db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
 
-        const sql = `SELECT * FROM Venda V 
+        const sql = `SELECT V.ValorTotal AS ValorTotalVenda, * 
+                    FROM Venda V 
                     INNER JOIN VendaProduto VP ON VP.CodVenda = V.CodVenda
-                    INNER JOIN Cliente C ON C.CodCliente = V.CodCliente`
-            + (!codCliente ? "" : ` WHERE V.CodCliente = ${codCliente}`);
+                    INNER JOIN Cliente C ON C.CodCliente = V.CodCliente`;
+
+        if (codCliente || codVenda) {
+            sql += ` WHERE ` + (!codCliente ? "" : ` V.CodCliente = ${codCliente}`)
+                + (!codVenda ? "" : ` V.CodVenda = ${codVenda}`);
+        }
 
         db.all(sql, [], (err, rows) => {
             if (err) reject(err);
