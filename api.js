@@ -19,7 +19,7 @@ app.get('/GetCadastraCliente', async (req, res) => {
         if (!request.nomeCliente)
             return res.status(400).json({ sucess: false, message: "Nome do cliente não informado!" });
 
-        getCreateCliente(request.nomeCliente)
+        getCreateCliente((request.nomeCliente ?? "").trim())
             .then((result) => {
                 console.log(result);
                 return res.status(200).json({ sucess: true, data: result })
