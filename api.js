@@ -111,9 +111,9 @@ app.post('/Venda', async (req, res) => {
 
 app.get('/Venda', async (req, res) => {
     try {
-        const { codCliente } = req.query;
+        const { codCliente, codVenda } = req.query;
 
-        getListaVendas(codCliente)
+        getListaVendas(codCliente, codVenda)
             .then((result) => {
                 const listaProdutos = result.reduce((acc, curr, i, arr) => {
 
@@ -202,7 +202,7 @@ function getListaVendas(codCliente, codVenda) {
 
         let db = new sqlite3.Database(`./${nomeEmpresa.toLowerCase()}.db`);
 
-        const sql = `SELECT V.ValorTotal AS ValorTotalVenda, * 
+        let sql = `SELECT V.ValorTotal AS ValorTotalVenda, * 
                     FROM Venda V 
                     INNER JOIN VendaProduto VP ON VP.CodVenda = V.CodVenda
                     INNER JOIN Cliente C ON C.CodCliente = V.CodCliente`;
